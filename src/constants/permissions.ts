@@ -1,0 +1,31 @@
+﻿export const PERMISSIONS = [
+  "view_receiving",
+  "view_preparation",
+  "view_shipping",
+  "view_history",
+  "view_analytics",
+  "view_chat",
+  "view_customers",
+  "view_products",
+  "view_staff",
+  "view_settings",
+  "orders_create",
+  "orders_edit",
+  "orders_delete",
+  "orders_change_status",
+  "orders_assign_shipping",
+  "customers_create",
+  "customers_edit",
+  "customers_delete",
+  "products_create",
+  "products_edit",
+  "products_delete",
+  "staff_create",
+  "staff_edit",
+  "staff_delete",
+  "roles_edit_permissions",
+  "settings_edit_definitions",
+  "chat_send_message"
+] as const;
+
+export type PermissionKey = (typeof PERMISSIONS)[number];
