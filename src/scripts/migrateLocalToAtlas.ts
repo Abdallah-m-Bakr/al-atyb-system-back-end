@@ -15,7 +15,6 @@ import { OrderModel } from "../models/Order";
 import { ChatRoomModel } from "../models/ChatRoom";
 import { ChatMessageModel } from "../models/ChatMessage";
 import { hashPassword } from "../utils/hash";
-import { randomPassword } from "../utils/credentials";
 
 type EnvMap = Record<string, string>;
 
@@ -41,6 +40,18 @@ interface SeedResult {
   permissionsSeeded: boolean;
   seededRoleKeys: string[];
   seededPermissionKeys: string[];
+  createdUsernames: string[];
+  demoCredentials: SeedCredential[];
+}
+
+interface SeedCredential {
+  username: string;
+  password: string;
+  roleKey: string;
+}
+
+interface DemoSeedAccount extends SeedCredential {
+  displayName: string;
 }
 
 const permissionLabels: Record<string, string> = {
@@ -153,6 +164,21 @@ const roleDefinitions: Array<{ key: string; nameArabic: string; permissions: str
     key: "general_manager",
     nameArabic: "مدير عام",
     permissions: [...PERMISSIONS]
+  }
+];
+
+const buildDemoSeedAccounts = (): DemoSeedAccount[] => [
+  ...roleDefinitions.map((role) => ({
+    displayName: role.nameArabic,
+    roleKey: role.key,
+    username: role.key,
+    password: `${role.key}123456`
+  })),
+  {
+    displayName: "Admin",
+    roleKey: "management",
+    username: "alateeb",
+    password: "admin123456"
   }
 ];
 
@@ -402,21 +428,10 @@ const verifyCollections = async (
   return reports;
 };
 
-const ensureUniqueUsername = async (baseUsername: string): Promise<string> => {
-  let username = baseUsername;
-  let suffix = 1;
-
-  while (await UserModel.exists({ username })) {
-    username = `${baseUsername}_${suffix}`;
-    suffix += 1;
-  }
-
-  return username;
-};
-
-const ensureSeedData = async (): Promise<SeedResult> => {
+export const ensureSeedData = async (): Promise<SeedResult> => {
   const seededRoleKeys: string[] = [];
   const seededPermissionKeys: string[] = [];
+  const createdUsernames: string[] = [];
 
   const existingPermissions = await PermissionModel.find({}, { key: 1, _id: 0 }).lean();
   const permissionKeySet = new Set(existingPermissions.map((item) => item.key));
@@ -445,57 +460,55 @@ const ensureSeedData = async (): Promise<SeedResult> => {
     seededRoleKeys.push(...missingRoles.map((role) => role.key));
   }
 
-  const defaultAdminAccounts = [
-    {
-      displayName: "System Admin",
-      baseUsername: "admin_001",
-      roleKey: "management"
-    },
-    {
-      displayName: "System Super Admin",
-      baseUsername: "gm_001",
-      roleKey: "general_manager"
-    }
-  ];
+  const roles = await RoleModel.find({}, { key: 1, nameArabic: 1, _id: 1 }).lean();
+  const roleByKey = new Map(roles.map((role) => [role.key, role]));
+  const demoAccounts = buildDemoSeedAccounts();
 
-  let adminUserCreated = false;
-
-  for (const account of defaultAdminAccounts) {
-    const role = await RoleModel.findOne({ key: account.roleKey }).lean();
+  for (const account of demoAccounts) {
+    const role = roleByKey.get(account.roleKey);
     if (!role) {
-      continue;
+      throw new Error(`Cannot seed user "${account.username}" because role "${account.roleKey}" is missing.`);
     }
 
-    const existsByRole = await UserModel.exists({ roleId: role._id });
-    const existsByUsername = await UserModel.exists({ username: account.baseUsername });
+    const passwordHash = await hashPassword(account.password);
+    const userExists = await UserModel.exists({ username: account.username });
 
-    if (existsByRole || existsByUsername) {
-      continue;
+    await UserModel.updateOne(
+      { username: account.username },
+      {
+        $set: {
+          roleId: role._id,
+          passwordHash,
+          status: "Active"
+        },
+        $setOnInsert: {
+          name: account.displayName,
+          username: account.username,
+          phone: "",
+          userPermissionsOverride: { allow: [], deny: [] },
+          sessions: []
+        }
+      },
+      { upsert: true }
+    );
+
+    if (!userExists) {
+      createdUsernames.push(account.username);
     }
-
-    const username = await ensureUniqueUsername(account.baseUsername);
-    const passwordHash = await hashPassword(randomPassword(20));
-
-    await UserModel.create({
-      name: account.displayName,
-      username,
-      phone: "",
-      status: "Active",
-      passwordHash,
-      roleId: role._id,
-      userPermissionsOverride: { allow: [], deny: [] },
-      sessions: []
-    });
-
-    adminUserCreated = true;
   }
 
   return {
-    adminUserCreated,
+    adminUserCreated: createdUsernames.includes("alateeb"),
     rolesSeeded: seededRoleKeys.length > 0,
     permissionsSeeded: seededPermissionKeys.length > 0,
     seededRoleKeys,
-    seededPermissionKeys
+    seededPermissionKeys,
+    createdUsernames,
+    demoCredentials: demoAccounts.map((account) => ({
+      username: account.username,
+      password: account.password,
+      roleKey: account.roleKey
+    }))
   };
 };
 
@@ -507,6 +520,13 @@ const printCollectionReport = (reports: CollectionReport[]): void => {
     console.log(
       `- ${report.name}: migrated=${report.migratedCount}, local=${report.localCount}, atlas=${report.atlasCount}, mismatch=${mismatchText}`
     );
+  }
+};
+
+const printSeedCredentials = (credentials: SeedCredential[]): void => {
+  console.log("\nSeeded demo accounts:");
+  for (const credential of credentials) {
+    console.log(`- ${credential.username} / ${credential.password}`);
   }
 };
 
@@ -589,6 +609,12 @@ const main = async (): Promise<void> => {
       console.log(`Seeded missing permissions: ${seedResult.seededPermissionKeys.join(", ")}`);
     }
 
+    if (seedResult.createdUsernames.length > 0) {
+      console.log(`Created users: ${seedResult.createdUsernames.join(", ")}`);
+    }
+
+    printSeedCredentials(seedResult.demoCredentials);
+
     const atlasCollections = await atlasDb.listCollections({}, { nameOnly: true }).toArray();
     const totalMigrated = Array.from(migratedByCollection.values()).reduce((sum, value) => sum + value, 0);
     const mismatches = verification.filter((item) => item.mismatch);
@@ -618,7 +644,9 @@ const main = async (): Promise<void> => {
         rolesSeeded: false,
         permissionsSeeded: false,
         seededRoleKeys: [],
-        seededPermissionKeys: []
+        seededPermissionKeys: [],
+        createdUsernames: [],
+        demoCredentials: []
       },
       [],
       errors
@@ -632,7 +660,9 @@ const main = async (): Promise<void> => {
   }
 };
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

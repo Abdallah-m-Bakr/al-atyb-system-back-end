@@ -7,6 +7,7 @@
     "dev": "cross-env NODE_ENV=local ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "cross-env NODE_ENV=production node dist/server.js",
+    "seed:atlas": "npm run build && node dist/scripts/seedAtlas.js",
     "migrate:local-to-atlas": "npm run build && node dist/scripts/migrateLocalToAtlas.js"
   },
   "dependencies": {
