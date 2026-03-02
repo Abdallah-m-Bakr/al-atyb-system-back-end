@@ -1,5 +1,4 @@
 ﻿import { FilterQuery } from "mongoose";
-import { canTransitionStatus } from "../constants/statusTransitions";
 import { OrderStatus } from "../constants/orderStatuses";
 import { OrderModel } from "../models/Order";
 
@@ -89,34 +88,7 @@ export const updateOrderStatus = async (orderId: string, nextStatus: OrderStatus
     throw new Error("Order not found");
   }
 
-  if (!canTransitionStatus(order.status as OrderStatus, nextStatus)) {
-    throw new Error(`Invalid status transition: ${order.status} -> ${nextStatus}`);
-  }
-
   order.status = nextStatus;
-  order.timestamps = order.timestamps ?? {
-    received: new Date(),
-    preparationStarted: null,
-    prepared: null,
-    courierPickedUp: null,
-    delivered: null
-  };
-
-  if (nextStatus === "In Preparation" && !order.timestamps.preparationStarted) {
-    order.timestamps.preparationStarted = new Date();
-  }
-
-  if (nextStatus === "Prepared") {
-    order.timestamps.prepared = new Date();
-  }
-
-  if (nextStatus === "Handed Over") {
-    order.timestamps.courierPickedUp = new Date();
-  }
-
-  if (nextStatus === "Delivered") {
-    order.timestamps.delivered = new Date();
-  }
 
   await order.save();
   return order.toObject();
