@@ -1,5 +1,6 @@
-﻿import { FilterQuery } from "mongoose";
+import { FilterQuery } from "mongoose";
 import { OrderStatus } from "../constants/orderStatuses";
+import { canTransitionStatus } from "../constants/statusTransitions";
 import { OrderModel } from "../models/Order";
 
 const toDate = (value?: string) => {
@@ -34,11 +35,7 @@ export const listOrders = async (query: {
 
   if (query.q) {
     const regex = new RegExp(query.q, "i");
-    filter.$or = [
-      { invoiceNumber: regex },
-      { "customer.name": regex },
-      { "customer.phones": regex }
-    ];
+    filter.$or = [{ invoiceNumber: regex }, { "customer.name": regex }, { "customer.phones": regex }];
   }
 
   const page = Math.max(Number(query.page || 1), 1);
@@ -73,7 +70,11 @@ export const createOrder = async (payload: any) => {
 export const updateOrder = async (orderId: string, payload: any) => {
   const safePayload = { ...(payload || {}) };
   delete safePayload.status;
-  return OrderModel.findByIdAndUpdate(orderId, safePayload, { new: true }).lean();
+
+  return OrderModel.findByIdAndUpdate(orderId, safePayload, {
+    new: true,
+    runValidators: false
+  }).lean();
 };
 
 export const deleteOrder = async (orderId: string) => {
@@ -82,23 +83,35 @@ export const deleteOrder = async (orderId: string) => {
 };
 
 export const updateOrderStatus = async (orderId: string, nextStatus: OrderStatus) => {
-  const order = await OrderModel.findById(orderId);
+  const existing = await OrderModel.findById(orderId, { status: 1 }).lean();
 
-  if (!order) {
+  if (!existing) {
     throw new Error("Order not found");
   }
 
-  order.status = nextStatus;
+  const currentStatus = existing.status as OrderStatus;
+  if (!canTransitionStatus(currentStatus, nextStatus)) {
+    throw new Error(`Invalid status transition from ${currentStatus} to ${nextStatus}`);
+  }
 
-  await order.save();
-  return order.toObject();
+  const updated = await OrderModel.findByIdAndUpdate(
+    orderId,
+    { $set: { status: nextStatus } },
+    { new: true, runValidators: false }
+  ).lean();
+
+  if (!updated) {
+    throw new Error("Order not found");
+  }
+
+  return updated;
 };
 
 export const updateOrderEvaluation = async (orderId: string, evaluation: Record<string, unknown>) => {
   const updated = await OrderModel.findByIdAndUpdate(
     orderId,
     { $set: { evaluation } },
-    { new: true }
+    { new: true, runValidators: false }
   ).lean();
 
   return updated;

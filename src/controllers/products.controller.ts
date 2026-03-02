@@ -5,6 +5,10 @@ import {
   listProducts,
   updateProduct
 } from "../services/products.service";
+import {
+  parseProductCreatePayload,
+  parseProductUpdatePayload
+} from "../validation/requestValidation";
 
 export const listProductsController = async (req: Request, res: Response) => {
   const items = await listProducts(req.query as any);
@@ -12,17 +16,27 @@ export const listProductsController = async (req: Request, res: Response) => {
 };
 
 export const createProductController = async (req: Request, res: Response) => {
-  const item = await createProduct(req.body || {});
-  return res.status(201).json({ item });
+  try {
+    const payload = parseProductCreatePayload(req.body || {});
+    const item = await createProduct(payload);
+    return res.status(201).json({ item });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
 };
 
 export const updateProductController = async (req: Request, res: Response) => {
-  const item = await updateProduct(req.params.id, req.body || {});
-  if (!item) {
-    return res.status(404).json({ message: "Product not found" });
-  }
+  try {
+    const payload = parseProductUpdatePayload(req.body || {});
+    const item = await updateProduct(req.params.id, payload);
+    if (!item) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
-  return res.json({ item });
+    return res.json({ item });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
 };
 
 export const deleteProductController = async (req: Request, res: Response) => {

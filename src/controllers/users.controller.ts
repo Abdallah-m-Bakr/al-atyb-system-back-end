@@ -6,6 +6,11 @@ import {
   updateUser,
   updateUserCredentials
 } from "../services/users.service";
+import {
+  parseUserCreatePayload,
+  parseUserCredentialsPayload,
+  parseUserUpdatePayload
+} from "../validation/requestValidation";
 
 export const listUsersController = async (_req: Request, res: Response) => {
   const items = await listUsers();
@@ -14,12 +19,7 @@ export const listUsersController = async (_req: Request, res: Response) => {
 
 export const createUserController = async (req: Request, res: Response) => {
   try {
-    const payload = req.body || {};
-
-    if (!payload.name || !payload.roleId) {
-      return res.status(400).json({ message: "name and roleId are required" });
-    }
-
+    const payload = parseUserCreatePayload(req.body || {});
     const result = await createUser(payload);
     return res.status(201).json(result);
   } catch (error) {
@@ -29,7 +29,8 @@ export const createUserController = async (req: Request, res: Response) => {
 
 export const updateUserController = async (req: Request, res: Response) => {
   try {
-    const item = await updateUser(req.params.id, req.body || {});
+    const payload = parseUserUpdatePayload(req.body || {});
+    const item = await updateUser(req.params.id, payload);
 
     if (!item) {
       return res.status(404).json({ message: "User not found" });
@@ -43,7 +44,8 @@ export const updateUserController = async (req: Request, res: Response) => {
 
 export const updateUserCredentialsController = async (req: Request, res: Response) => {
   try {
-    const result = await updateUserCredentials(req.params.id, req.body || {});
+    const payload = parseUserCredentialsPayload(req.body || {});
+    const result = await updateUserCredentials(req.params.id, payload);
     return res.json(result);
   } catch (error) {
     return res.status(400).json({ message: (error as Error).message });

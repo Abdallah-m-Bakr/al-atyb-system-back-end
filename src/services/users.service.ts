@@ -1,10 +1,39 @@
-﻿import { randomPassword } from "../utils/credentials";
 import { hashPassword } from "../utils/hash";
 import { RoleModel } from "../models/Role";
 import { UserModel } from "../models/User";
 import { stripSensitiveUserFields } from "../utils/sanitize";
 
+const normalizeUsername = (value: string): string => {
+  return value.trim().toLowerCase().replace(/\s+/g, "_");
+};
 
+const defaultPasswordForUsername = (username: string): string => {
+  return `${username}123456`;
+};
+
+const ensureUniqueUsername = async (username: string, excludeUserId?: string): Promise<void> => {
+  const query = excludeUserId
+    ? { username, _id: { $ne: excludeUserId } }
+    : { username };
+
+  const exists = await UserModel.exists(query);
+  if (exists) {
+    throw new Error("username already exists");
+  }
+};
+
+const generateRoleBasedUsername = async (roleKey: string): Promise<string> => {
+  const base = normalizeUsername(roleKey);
+  let candidate = base;
+  let suffix = 1;
+
+  while (await UserModel.exists({ username: candidate })) {
+    suffix += 1;
+    candidate = `${base}_${suffix}`;
+  }
+
+  return candidate;
+};
 
 export const listUsers = async () => {
   const users = await UserModel.find().populate("roleId").sort({ createdAt: -1 }).lean();
@@ -18,7 +47,7 @@ export const createUser = async (input: {
   username?: string;
   password?: string;
   status?: "Active" | "Suspended";
-  userPermissionsOverride?: { allow: string[]; deny: string[] };
+  userPermissionsOverride?: { allow?: string[]; deny?: string[] };
 }) => {
   const role = await RoleModel.findById(input.roleId).lean();
 
@@ -26,9 +55,15 @@ export const createUser = async (input: {
     throw new Error("Role not found");
   }
 
-  const fallbackUsername = `${role.key}_${Math.floor(100 + Math.random() * 899)}`;
-  const username = input.username?.trim() || fallbackUsername;
-  const password = input.password || randomPassword(12);
+  let username: string;
+  if (input.username?.trim()) {
+    username = normalizeUsername(input.username);
+    await ensureUniqueUsername(username);
+  } else {
+    username = await generateRoleBasedUsername(role.key);
+  }
+
+  const password = input.password?.trim() || defaultPasswordForUsername(username);
   const passwordHash = await hashPassword(password);
 
   const created = await UserModel.create({
@@ -38,7 +73,10 @@ export const createUser = async (input: {
     roleId: input.roleId,
     username,
     passwordHash,
-    userPermissionsOverride: input.userPermissionsOverride || { allow: [], deny: [] }
+    userPermissionsOverride: {
+      allow: input.userPermissionsOverride?.allow || [],
+      deny: input.userPermissionsOverride?.deny || []
+    }
   });
 
   const user = await UserModel.findById(created._id).populate("roleId").lean();
@@ -55,7 +93,7 @@ export const updateUser = async (
     phone?: string;
     roleId?: string;
     status?: "Active" | "Suspended";
-    userPermissionsOverride?: { allow: string[]; deny: string[] };
+    userPermissionsOverride?: { allow?: string[]; deny?: string[] };
   }
 ) => {
   if (input.roleId) {
@@ -74,7 +112,12 @@ export const updateUser = async (
         ...(input.roleId !== undefined ? { roleId: input.roleId } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.userPermissionsOverride !== undefined
-          ? { userPermissionsOverride: input.userPermissionsOverride }
+          ? {
+              userPermissionsOverride: {
+                allow: input.userPermissionsOverride.allow || [],
+                deny: input.userPermissionsOverride.deny || []
+              }
+            }
           : {})
       }
     },
@@ -95,15 +138,22 @@ export const updateUserCredentials = async (
     throw new Error("User not found");
   }
 
-  const username = input.regenerate
-    ? `${existing.username.split("_")[0] || "user"}_${Math.floor(100 + Math.random() * 899)}`
-    : input.username || existing.username;
+  let username = existing.username;
 
-  const password = input.regenerate ? randomPassword(12) : input.password;
+  if (input.username?.trim()) {
+    username = normalizeUsername(input.username);
+  }
+
+  await ensureUniqueUsername(username, userId);
+
+  const shouldResetPassword = Boolean(input.regenerate || input.password);
+  const password = input.regenerate
+    ? defaultPasswordForUsername(username)
+    : input.password?.trim();
 
   const updatePayload: Record<string, unknown> = { username };
 
-  if (password) {
+  if (shouldResetPassword && password) {
     updatePayload.passwordHash = await hashPassword(password);
   }
 

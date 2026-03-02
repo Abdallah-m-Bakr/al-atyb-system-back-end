@@ -8,6 +8,12 @@ import {
   updateOrderEvaluation,
   updateOrderStatus
 } from "../services/orders.service";
+import {
+  parseOrderCreatePayload,
+  parseOrderEvaluationPayload,
+  parseOrderStatusPayload,
+  parseOrderUpdatePayload
+} from "../validation/requestValidation";
 // Chat feature temporarily disabled for v1 release
 // Temporarily disabled for v1 production
 // import { ensureOrderRoom } from "../services/chat.service";
@@ -28,7 +34,8 @@ export const getOrderController = async (req: Request, res: Response) => {
 
 export const createOrderController = async (req: Request, res: Response) => {
   try {
-    const item = await createOrder(req.body || {});
+    const payload = parseOrderCreatePayload(req.body || {});
+    const item = await createOrder(payload);
     // Chat feature temporarily disabled for v1 release
     // Temporarily disabled for v1 production
     // if (item) {
@@ -41,12 +48,18 @@ export const createOrderController = async (req: Request, res: Response) => {
 };
 
 export const updateOrderController = async (req: Request, res: Response) => {
-  const item = await updateOrder(req.params.id, req.body || {});
-  if (!item) {
-    return res.status(404).json({ message: "Order not found" });
-  }
+  try {
+    const payload = parseOrderUpdatePayload(req.body || {});
+    const item = await updateOrder(req.params.id, payload);
 
-  return res.json({ item });
+    if (!item) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    return res.json({ item });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
 };
 
 export const deleteOrderController = async (req: Request, res: Response) => {
@@ -60,11 +73,8 @@ export const deleteOrderController = async (req: Request, res: Response) => {
 
 export const updateOrderStatusController = async (req: Request, res: Response) => {
   try {
-    const nextStatus = req.body?.status;
-    if (!nextStatus) {
-      return res.status(400).json({ message: "status is required" });
-    }
-
+    const { status } = parseOrderStatusPayload(req.body || {});
+    const nextStatus = status;
     const item = await updateOrderStatus(req.params.id, nextStatus);
     return res.json({ item });
   } catch (error) {
@@ -73,10 +83,16 @@ export const updateOrderStatusController = async (req: Request, res: Response) =
 };
 
 export const updateOrderEvaluationController = async (req: Request, res: Response) => {
-  const item = await updateOrderEvaluation(req.params.id, req.body || {});
-  if (!item) {
-    return res.status(404).json({ message: "Order not found" });
-  }
+  try {
+    const evaluation = parseOrderEvaluationPayload(req.body || {});
+    const item = await updateOrderEvaluation(req.params.id, evaluation);
 
-  return res.json({ item });
+    if (!item) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    return res.json({ item });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
 };

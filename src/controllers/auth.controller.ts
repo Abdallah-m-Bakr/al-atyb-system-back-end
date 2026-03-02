@@ -1,4 +1,4 @@
-﻿import { Request, Response } from "express";
+import { Request, Response } from "express";
 import { env } from "../config/env";
 import {
   changeCurrentCredentials,
@@ -19,7 +19,8 @@ const refreshCookieOptions = {
 
 export const loginController = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body as { username: string; password: string };
+    const username = String(req.body?.username || "").trim();
+    const password = String(req.body?.password || "");
 
     if (!username || !password) {
       return res.status(400).json({ message: "username and password are required" });
@@ -92,14 +93,30 @@ export const changeCredentialsController = async (req: Request, res: Response) =
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { currentPassword, newUsername, newPassword } = req.body as {
-      currentPassword: string;
-      newUsername?: string;
-      newPassword?: string;
-    };
+    const currentPassword = String(req.body?.currentPassword || "").trim();
+    const newUsernameRaw = req.body?.newUsername;
+    const newPasswordRaw = req.body?.newPassword;
 
     if (!currentPassword) {
       return res.status(400).json({ message: "currentPassword is required" });
+    }
+
+    const newUsername =
+      typeof newUsernameRaw === "string" && newUsernameRaw.trim()
+        ? newUsernameRaw.trim()
+        : undefined;
+
+    if (newUsernameRaw !== undefined && !newUsername) {
+      return res.status(400).json({ message: "newUsername cannot be empty" });
+    }
+
+    const newPassword =
+      typeof newPasswordRaw === "string" && newPasswordRaw.length > 0
+        ? newPasswordRaw
+        : undefined;
+
+    if (newPasswordRaw !== undefined && (!newPassword || newPassword.length < 6)) {
+      return res.status(400).json({ message: "newPassword must be at least 6 characters" });
     }
 
     const user = await changeCurrentCredentials({

@@ -1,10 +1,6 @@
-﻿import { UserModel } from "../models/User";
+import { UserModel } from "../models/User";
 import { comparePassword, hashPassword, hashRefreshToken } from "../utils/hash";
-import {
-  signAccessToken,
-  signRefreshToken,
-  verifyRefreshToken
-} from "../utils/jwt";
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt";
 import { randomSessionId } from "../utils/credentials";
 import { resolveEffectivePermissions } from "../utils/permissionResolver";
 import { toAuthUserResponse } from "../utils/sanitize";
@@ -21,8 +17,6 @@ const parseTtlToMs = (ttl: string): number => {
   if (unit === "h") return value * 60 * 60 * 1000;
   return value * 24 * 60 * 60 * 1000;
 };
-
-
 
 export const loginWithCredentials = async (params: {
   username: string;
@@ -154,7 +148,7 @@ export const changeCurrentCredentials = async (params: {
   newUsername?: string;
   newPassword?: string;
 }) => {
-  const user = await UserModel.findById(params.userId);
+  const user = await UserModel.findById(params.userId).lean();
   if (!user) {
     throw new Error("User not found");
   }
@@ -164,16 +158,25 @@ export const changeCurrentCredentials = async (params: {
     throw new Error("Current password is incorrect");
   }
 
-  if (params.newUsername) {
-    user.username = params.newUsername;
+  const updatePayload: Record<string, unknown> = {};
+
+  if (params.newUsername?.trim()) {
+    updatePayload.username = params.newUsername.trim();
   }
 
   if (params.newPassword) {
-    user.passwordHash = await hashPassword(params.newPassword);
+    updatePayload.passwordHash = await hashPassword(params.newPassword);
   }
 
-  await user.save();
+  if (Object.keys(updatePayload).length > 0) {
+    await UserModel.updateOne({ _id: params.userId }, { $set: updatePayload });
+  }
 
-  const resolved = await resolveEffectivePermissions(user._id.toString());
-  return toAuthUserResponse(user.toObject(), resolved.roleKey, resolved.permissions);
+  const updatedUser = await UserModel.findById(params.userId).lean();
+  if (!updatedUser) {
+    throw new Error("User not found");
+  }
+
+  const resolved = await resolveEffectivePermissions(params.userId);
+  return toAuthUserResponse(updatedUser, resolved.roleKey, resolved.permissions);
 };

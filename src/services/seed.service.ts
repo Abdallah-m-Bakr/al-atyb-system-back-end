@@ -1,238 +1,301 @@
-﻿import { PERMISSIONS } from "../constants/permissions";
-import { RoleModel } from "../models/Role";
+import mongoose, { Model } from "mongoose";
+import { PERMISSIONS } from "../constants/permissions";
 import { PermissionModel } from "../models/Permission";
+import { RoleModel } from "../models/Role";
 import { UserModel } from "../models/User";
-import { hashPassword } from "../utils/hash";
-import { randomPassword } from "../utils/credentials";
 import { SettingsModel } from "../models/Settings";
 import { CustomerModel } from "../models/Customer";
 import { ProductModel } from "../models/Product";
 import { OrderModel } from "../models/Order";
 import { ChatRoomModel } from "../models/ChatRoom";
 import { ChatMessageModel } from "../models/ChatMessage";
+import { hashPassword } from "../utils/hash";
 
 const permissionLabels: Record<string, string> = {
-  view_receiving: "عرض الاستقبال",
-  view_preparation: "عرض التحضير",
-  view_shipping: "عرض الشحن",
-  view_history: "عرض السجل",
-  view_analytics: "عرض التحليلات",
-  view_chat: "عرض الشات",
-  view_customers: "عرض العملاء",
-  view_products: "عرض الأصناف",
-  view_staff: "عرض الموظفين",
-  view_settings: "عرض الإعدادات",
-  orders_create: "إنشاء طلب",
-  orders_edit: "تعديل طلب",
-  orders_delete: "حذف طلب",
-  orders_change_status: "تغيير حالة الطلب",
-  orders_assign_shipping: "تعيين الشحن",
-  customers_create: "إنشاء عميل",
-  customers_edit: "تعديل عميل",
-  customers_delete: "حذف عميل",
-  products_create: "إنشاء صنف",
-  products_edit: "تعديل صنف",
-  products_delete: "حذف صنف",
-  staff_create: "إنشاء مستخدم",
-  staff_edit: "تعديل مستخدم",
-  staff_delete: "حذف مستخدم",
-  roles_edit_permissions: "تعديل صلاحيات الأدوار",
-  settings_edit_definitions: "تعديل تعريفات النظام",
-  chat_send_message: "إرسال رسالة"
+  view_receiving: "??? ?????????",
+  view_preparation: "??? ???????",
+  view_shipping: "??? ?????",
+  view_history: "??? ?????",
+  view_analytics: "??? ?????????",
+  view_chat: "??? ?????",
+  view_customers: "??? ???????",
+  view_products: "??? ???????",
+  view_staff: "??? ????????",
+  view_settings: "??? ?????????",
+  orders_create: "????? ???",
+  orders_edit: "????? ???",
+  orders_delete: "??? ???",
+  orders_change_status: "????? ???? ?????",
+  orders_assign_shipping: "????? ?????",
+  customers_create: "????? ????",
+  customers_edit: "????? ????",
+  customers_delete: "??? ????",
+  products_create: "????? ???",
+  products_edit: "????? ???",
+  products_delete: "??? ???",
+  staff_create: "????? ??????",
+  staff_edit: "????? ??????",
+  staff_delete: "??? ??????",
+  roles_edit_permissions: "????? ??????? ???????",
+  settings_edit_definitions: "????? ??????? ??????",
+  chat_send_message: "????? ?????"
 };
 
-const rolePermissions: Record<string, string[]> = {
-  general_manager: [...PERMISSIONS],
-  management: [
-    "view_receiving",
-    "view_preparation",
-    "view_shipping",
-    "view_history",
-    "view_analytics",
-    "view_chat",
-    "view_customers",
-    "view_products",
-    "view_staff",
-    "view_settings",
-    "orders_create",
-    "orders_edit",
-    "orders_change_status",
-    "orders_assign_shipping",
-    "customers_create",
-    "customers_edit",
-    "customers_delete",
-    "products_create",
-    "products_edit",
-    "products_delete",
-    "staff_create",
-    "staff_edit",
-    "staff_delete",
-    "roles_edit_permissions",
-    "settings_edit_definitions",
-    "chat_send_message"
-  ],
-  receiving_officer: [
-    "view_receiving",
-    "view_history",
-    "view_customers",
-    "view_products",
-    "view_chat",
-    "orders_create",
-    "orders_edit",
-    "orders_change_status",
-    "customers_create",
-    "customers_edit",
-    "chat_send_message"
-  ],
-  preparation_officer: [
-    "view_preparation",
-    "view_history",
-    "view_products",
-    "view_chat",
-    "orders_edit",
-    "orders_change_status",
-    "orders_assign_shipping",
-    "chat_send_message"
-  ],
-  pilot: [
-    "view_shipping",
-    "view_history",
-    "view_chat",
-    "orders_change_status",
-    "orders_assign_shipping",
-    "chat_send_message"
-  ]
-};
-
-const roleNamesArabic: Record<string, string> = {
-  receiving_officer: "مسؤول استقبال",
-  preparation_officer: "مسؤول تحضير",
-  pilot: "طيار",
-  management: "إدارة",
-  general_manager: "مدير عام"
-};
+const roleDefinitions: Array<{ key: string; nameArabic: string; permissions: string[] }> = [
+  {
+    key: "receiving_officer",
+    nameArabic: "????? ???????",
+    permissions: [
+      "view_receiving",
+      "view_history",
+      "view_customers",
+      "view_products",
+      "view_chat",
+      "orders_create",
+      "orders_edit",
+      "orders_change_status",
+      "customers_create",
+      "customers_edit",
+      "chat_send_message"
+    ]
+  },
+  {
+    key: "preparation_officer",
+    nameArabic: "????? ?????",
+    permissions: [
+      "view_preparation",
+      "view_history",
+      "view_products",
+      "view_chat",
+      "orders_edit",
+      "orders_change_status",
+      "orders_assign_shipping",
+      "chat_send_message"
+    ]
+  },
+  {
+    key: "pilot",
+    nameArabic: "????",
+    permissions: [
+      "view_shipping",
+      "view_history",
+      "view_chat",
+      "orders_change_status",
+      "orders_assign_shipping",
+      "chat_send_message"
+    ]
+  },
+  {
+    key: "management",
+    nameArabic: "?????",
+    permissions: [
+      "view_receiving",
+      "view_preparation",
+      "view_shipping",
+      "view_history",
+      "view_analytics",
+      "view_chat",
+      "view_customers",
+      "view_products",
+      "view_staff",
+      "view_settings",
+      "orders_create",
+      "orders_edit",
+      "orders_change_status",
+      "orders_assign_shipping",
+      "customers_create",
+      "customers_edit",
+      "customers_delete",
+      "products_create",
+      "products_edit",
+      "products_delete",
+      "staff_create",
+      "staff_edit",
+      "staff_delete",
+      "roles_edit_permissions",
+      "settings_edit_definitions",
+      "chat_send_message"
+    ]
+  },
+  {
+    key: "general_manager",
+    nameArabic: "???? ???",
+    permissions: [...PERMISSIONS]
+  }
+];
 
 const settingsDefinitions = [
   {
     id: "cust_tags",
-    label: "تصنيفات العملاء",
-    description: "وسوم العملاء",
+    label: "??????? ???????",
+    description: "???? ???????",
     items: [
-      { name: "عميل VIP", active: true, sortOrder: 1 },
-      { name: "عميل منتظم", active: true, sortOrder: 2 },
-      { name: "صعب الإرضاء", active: true, sortOrder: 3 },
-      { name: "طلبات قيمة", active: true, sortOrder: 4 },
-      { name: "عميل جديد", active: true, sortOrder: 5 }
+      { name: "???? VIP", active: true, sortOrder: 1 },
+      { name: "???? ?????", active: true, sortOrder: 2 },
+      { name: "??? ???????", active: true, sortOrder: 3 },
+      { name: "????? ????", active: true, sortOrder: 4 },
+      { name: "???? ????", active: true, sortOrder: 5 }
     ]
   },
   {
     id: "units",
-    label: "وحدات القياس",
-    description: "وحدات البيع",
+    label: "????? ??????",
+    description: "????? ?????",
     items: [
-      { name: "كيلو", active: true, sortOrder: 1 },
-      { name: "قطعة", active: true, sortOrder: 2 },
-      { name: "عبوة", active: true, sortOrder: 3 },
-      { name: "كرتونة", active: true, sortOrder: 4 },
-      { name: "عرض", active: true, sortOrder: 5 }
+      { name: "????", active: true, sortOrder: 1 },
+      { name: "????", active: true, sortOrder: 2 },
+      { name: "????", active: true, sortOrder: 3 },
+      { name: "??????", active: true, sortOrder: 4 },
+      { name: "???", active: true, sortOrder: 5 }
     ]
   },
   {
     id: "sources",
-    label: "مصدر الطلب",
-    description: "قنوات المصدر",
+    label: "???? ?????",
+    description: "????? ??????",
     items: [
-      { name: "واتساب", active: true, sortOrder: 1 },
-      { name: "فيسبوك", active: true, sortOrder: 2 },
-      { name: "انستجرام", active: true, sortOrder: 3 },
-      { name: "تيك توك", active: true, sortOrder: 4 },
-      { name: "تليفون أرضي", active: true, sortOrder: 5 },
-      { name: "موبايل", active: true, sortOrder: 6 }
+      { name: "??????", active: true, sortOrder: 1 },
+      { name: "??????", active: true, sortOrder: 2 },
+      { name: "????????", active: true, sortOrder: 3 },
+      { name: "??? ???", active: true, sortOrder: 4 },
+      { name: "?????? ????", active: true, sortOrder: 5 },
+      { name: "??????", active: true, sortOrder: 6 }
     ]
   },
   {
     id: "campaigns",
-    label: "حملة تسويقية",
-    description: "الحملات النشطة",
+    label: "???? ???????",
+    description: "??????? ??????",
     items: [
-      { name: "بدون حملة", active: true, sortOrder: 1 },
-      { name: "عرض الجمعة البيضاء", active: true, sortOrder: 2 },
-      { name: "حملة المؤثرين", active: true, sortOrder: 3 },
-      { name: "إعلانات ممولة", active: true, sortOrder: 4 }
+      { name: "???? ????", active: true, sortOrder: 1 },
+      { name: "??? ?????? ???????", active: true, sortOrder: 2 },
+      { name: "???? ????????", active: true, sortOrder: 3 },
+      { name: "??????? ?????", active: true, sortOrder: 4 }
     ]
   },
   {
     id: "order_status_msg",
-    label: "حالة الطلب (توقيت)",
-    description: "وصف توقيت الطلب",
+    label: "???? ????? (?????)",
+    description: "??? ????? ?????",
     items: [
-      { name: "عادي", active: true, sortOrder: 1 },
-      { name: "مستعجل جداً", active: true, sortOrder: 2 },
-      { name: "توقيت محدد", active: true, sortOrder: 3 }
+      { name: "????", active: true, sortOrder: 1 },
+      { name: "?????? ????", active: true, sortOrder: 2 },
+      { name: "????? ????", active: true, sortOrder: 3 }
     ]
   },
   {
     id: "item_status",
-    label: "موقف الصنف",
-    description: "حالات الأصناف",
+    label: "???? ?????",
+    description: "????? ???????",
     items: [
-      { name: "متوفر", active: true, sortOrder: 1 },
-      { name: "غير متوفر", active: true, sortOrder: 2 },
-      { name: "كمية أقل", active: true, sortOrder: 3 },
-      { name: "جودة متوسطة", active: true, sortOrder: 4 },
-      { name: "ملغي من العميل", active: true, sortOrder: 5 }
+      { name: "?????", active: true, sortOrder: 1 },
+      { name: "??? ?????", active: true, sortOrder: 2 },
+      { name: "???? ???", active: true, sortOrder: 3 },
+      { name: "???? ??????", active: true, sortOrder: 4 },
+      { name: "???? ?? ??????", active: true, sortOrder: 5 }
     ]
   },
   {
     id: "payment_methods",
-    label: "طريقة التحصيل",
-    description: "طرق الدفع",
+    label: "????? ???????",
+    description: "??? ?????",
     items: [
-      { name: "نقدي (Cash)", active: true, sortOrder: 1 },
-      { name: "فودافون كاش", active: true, sortOrder: 2 },
-      { name: "إنستاباي", active: true, sortOrder: 3 }
+      { name: "???? (Cash)", active: true, sortOrder: 1 },
+      { name: "??????? ???", active: true, sortOrder: 2 },
+      { name: "????????", active: true, sortOrder: 3 }
     ]
   },
   {
     id: "order_workflow",
-    label: "موقف الطلب",
-    description: "مراحل الطلب",
+    label: "???? ?????",
+    description: "????? ?????",
     items: [
-      { name: "تم الاستقبال", active: true, sortOrder: 1 },
-      { name: "تحت المراجعة", active: true, sortOrder: 2 },
-      { name: "تم التأكيد", active: true, sortOrder: 3 },
-      { name: "جاري التجهيز", active: true, sortOrder: 4 },
-      { name: "تم التحضير", active: true, sortOrder: 5 },
-      { name: "انتظار طيار", active: true, sortOrder: 6 },
-      { name: "تم التسليم للمندوب", active: true, sortOrder: 7 },
-      { name: "تم التوصيل", active: true, sortOrder: 8 },
-      { name: "تم الإلغاء", active: true, sortOrder: 9 }
+      { name: "?? ?????????", active: true, sortOrder: 1 },
+      { name: "??? ????????", active: true, sortOrder: 2 },
+      { name: "?? ???????", active: true, sortOrder: 3 },
+      { name: "???? ???????", active: true, sortOrder: 4 },
+      { name: "?? ???????", active: true, sortOrder: 5 },
+      { name: "?????? ????", active: true, sortOrder: 6 },
+      { name: "?? ??????? ???????", active: true, sortOrder: 7 },
+      { name: "?? ???????", active: true, sortOrder: 8 },
+      { name: "?? ???????", active: true, sortOrder: 9 }
     ]
   },
   {
     id: "invoice_status",
-    label: "حالة الفاتورة",
-    description: "الحالة النهائية",
+    label: "???? ????????",
+    description: "?????? ????????",
     items: [
-      { name: "مكتمل", active: true, sortOrder: 1 },
-      { name: "مرتجع بالكامل", active: true, sortOrder: 2 },
-      { name: "استبدال", active: true, sortOrder: 3 },
-      { name: "ناقص (مرتجع جزئي)", active: true, sortOrder: 4 },
-      { name: "شكوى", active: true, sortOrder: 5 }
+      { name: "?????", active: true, sortOrder: 1 },
+      { name: "????? ???????", active: true, sortOrder: 2 },
+      { name: "???????", active: true, sortOrder: 3 },
+      { name: "???? (????? ????)", active: true, sortOrder: 4 },
+      { name: "????", active: true, sortOrder: 5 }
     ]
   },
   {
     id: "product_categories",
-    label: "التصنيفات (الأصناف)",
-    description: "تصنيفات المنتجات",
+    label: "????????? (???????)",
+    description: "??????? ????????",
     items: [
-      { name: "خضروات", active: true, sortOrder: 1 },
-      { name: "فواكه", active: true, sortOrder: 2 },
-      { name: "ألبان", active: true, sortOrder: 3 },
-      { name: "مجمدات", active: true, sortOrder: 4 },
-      { name: "سلع غذائية", active: true, sortOrder: 5 }
+      { name: "??????", active: true, sortOrder: 1 },
+      { name: "?????", active: true, sortOrder: 2 },
+      { name: "?????", active: true, sortOrder: 3 },
+      { name: "??????", active: true, sortOrder: 4 },
+      { name: "??? ??????", active: true, sortOrder: 5 }
     ]
   }
+];
+
+const demoUsers: Array<{ roleKey: string; username: string; password: string; name: string }> = [
+  {
+    roleKey: "receiving_officer",
+    username: "receiving_officer",
+    password: "receiving_officer123456",
+    name: "????? ?????????"
+  },
+  {
+    roleKey: "preparation_officer",
+    username: "preparation_officer",
+    password: "preparation_officer123456",
+    name: "????? ???????"
+  },
+  {
+    roleKey: "pilot",
+    username: "pilot",
+    password: "pilot123456",
+    name: "??????"
+  },
+  {
+    roleKey: "management",
+    username: "management",
+    password: "management123456",
+    name: "???????"
+  },
+  {
+    roleKey: "general_manager",
+    username: "general_manager",
+    password: "general_manager123456",
+    name: "?????? ?????"
+  },
+  {
+    roleKey: "management",
+    username: "alateeb",
+    password: "admin123456",
+    name: "Admin"
+  }
+];
+
+const projectModels: Model<unknown>[] = [
+  PermissionModel as unknown as Model<unknown>,
+  RoleModel as unknown as Model<unknown>,
+  UserModel as unknown as Model<unknown>,
+  SettingsModel as unknown as Model<unknown>,
+  CustomerModel as unknown as Model<unknown>,
+  ProductModel as unknown as Model<unknown>,
+  OrderModel as unknown as Model<unknown>,
+  ChatRoomModel as unknown as Model<unknown>,
+  ChatMessageModel as unknown as Model<unknown>
 ];
 
 const getOperationalDay = (date: Date): string => {
@@ -244,20 +307,23 @@ const getOperationalDay = (date: Date): string => {
   return current.toISOString().split("T")[0];
 };
 
-const invoiceNumber = (offset: number) => {
-  const d = new Date();
-  const day = `${d.getDate()}`.padStart(2, "0");
-  const month = `${d.getMonth() + 1}`.padStart(2, "0");
-  const year = `${d.getFullYear()}`.slice(-2);
-  return `${day}${month}${year}${`${offset}`.padStart(5, "0")}`;
-};
-
-export const runSeedIfNeeded = async (): Promise<void> => {
-  const roleCount = await RoleModel.countDocuments();
-  if (roleCount > 0) {
-    return;
+const ensureModelCollectionsAndIndexes = async (): Promise<void> => {
+  for (const model of projectModels) {
+    try {
+      await model.createCollection();
+    } catch (error) {
+      if ((error as any)?.code !== 48) {
+        throw error;
+      }
+    }
   }
 
+  for (const model of projectModels) {
+    await model.syncIndexes();
+  }
+};
+
+const seedDemoData = async (): Promise<void> => {
   await PermissionModel.insertMany(
     PERMISSIONS.map((key) => ({
       key,
@@ -265,68 +331,26 @@ export const runSeedIfNeeded = async (): Promise<void> => {
     }))
   );
 
-  const roles = await RoleModel.insertMany([
-    {
-      key: "receiving_officer",
-      nameArabic: roleNamesArabic.receiving_officer,
-      permissions: rolePermissions.receiving_officer
-    },
-    {
-      key: "preparation_officer",
-      nameArabic: roleNamesArabic.preparation_officer,
-      permissions: rolePermissions.preparation_officer
-    },
-    {
-      key: "pilot",
-      nameArabic: roleNamesArabic.pilot,
-      permissions: rolePermissions.pilot
-    },
-    {
-      key: "management",
-      nameArabic: roleNamesArabic.management,
-      permissions: rolePermissions.management
-    },
-    {
-      key: "general_manager",
-      nameArabic: roleNamesArabic.general_manager,
-      permissions: rolePermissions.general_manager
-    }
-  ]);
-
+  const roles = await RoleModel.insertMany(roleDefinitions);
   const roleByKey = new Map(roles.map((role) => [role.key, role]));
 
-  const defaultUsers = [
-    { key: "receiving_officer", username: "reception_001", name: "محمود الاستقبال" },
-    { key: "preparation_officer", username: "prep_001", name: "أحمد التحضير" },
-    { key: "pilot", username: "pilot_001", name: "كريم الطيار" },
-    { key: "management", username: "admin_001", name: "مدير الإدارة" },
-    { key: "general_manager", username: "gm_001", name: "المدير العام" }
-  ];
+  for (const account of demoUsers) {
+    const role = roleByKey.get(account.roleKey);
+    if (!role) {
+      throw new Error(`Cannot seed user ${account.username}. Role ${account.roleKey} is missing.`);
+    }
 
-  const generatedCreds: Array<{ username: string; password: string; role: string }> = [];
-
-  for (const user of defaultUsers) {
-    const role = roleByKey.get(user.key);
-    if (!role) continue;
-
-    const password = randomPassword(12);
-    const passwordHash = await hashPassword(password);
+    const passwordHash = await hashPassword(account.password);
 
     await UserModel.create({
-      name: user.name,
-      username: user.username,
+      name: account.name,
+      username: account.username,
       passwordHash,
       roleId: role._id,
       status: "Active",
       phone: "",
       userPermissionsOverride: { allow: [], deny: [] },
       sessions: []
-    });
-
-    generatedCreds.push({
-      username: user.username,
-      password,
-      role: role.nameArabic
     });
   }
 
@@ -337,81 +361,92 @@ export const runSeedIfNeeded = async (): Promise<void> => {
 
   const customers = await CustomerModel.insertMany([
     {
-      name: "طاهر علوه",
+      name: "???? ????",
       accountName: "taher_alwa_fb",
       phones: ["01010303303", ""],
-      addresses: ["المنصورة - شارع الجمهورية", ""],
-      tags: ["عميل VIP", "عميل منتظم"],
+      addresses: ["???????? - ???? ?????????", ""],
+      tags: ["???? VIP", "???? ?????"],
       previousOrdersCount: 45,
       monthlyAverage: 8.5,
-      notes: "عميل مميز",
+      notes: "???? ????",
       deliveryFee: 35,
       defaultDiscount: 10,
-      loyaltyPoints: 120
+      loyaltyPoints: 120,
+      rating: 5
     },
     {
-      name: "أحمد علي حسن",
+      name: "???? ??? ???",
       accountName: "ahmed_ali_fb",
       phones: ["01011223344", "01299887766"],
-      addresses: ["القاهرة - المعادي", "الجيزة - الشيخ زايد"],
-      tags: ["عميل منتظم"],
+      addresses: ["??????? - ???????", "?????? - ????? ????"],
+      tags: ["???? ?????"],
       previousOrdersCount: 15,
       monthlyAverage: 3,
-      notes: "يفضل التوصيل بعد 6 مساء",
+      notes: "???? ??????? ??? 6 ????",
       deliveryFee: 45,
       defaultDiscount: 5,
-      loyaltyPoints: 45
+      loyaltyPoints: 45,
+      rating: 4
     },
     {
-      name: "منى محمود",
+      name: "??? ?????",
       accountName: "mona_inst",
       phones: ["01122334455", ""],
-      addresses: ["التجمع الخامس", ""],
-      tags: ["عميل جديد"],
+      addresses: ["?????? ??????", ""],
+      tags: ["???? ????"],
       previousOrdersCount: 5,
       monthlyAverage: 1.2,
-      notes: "بوابة رقم 3",
+      notes: "????? ??? 3",
       deliveryFee: 50,
       defaultDiscount: 0,
-      loyaltyPoints: 30
+      loyaltyPoints: 30,
+      rating: 4
     }
   ]);
 
   const products = await ProductModel.insertMany([
     {
-      name: "طماطم بلدي",
+      name: "????? ????",
       status: "Available",
-      category: "خضروات",
-      unitPrices: { Kilo: 15, Piece: 2, Package: 40 }
+      category: "??????",
+      unitPrices: { Kilo: 15, Piece: 2, Package: 40, Offer: 70 },
+      offerDescription: "",
+      note: ""
     },
     {
-      name: "خيار صوبة",
+      name: "???? ????",
       status: "Available",
-      category: "خضروات",
-      unitPrices: { Kilo: 12, Piece: 1.5, Package: 30 }
+      category: "??????",
+      unitPrices: { Kilo: 12, Piece: 1.5, Package: 30, Offer: 55 },
+      offerDescription: "",
+      note: ""
     },
     {
-      name: "مانجو عويس",
+      name: "????? ????",
       status: "Available",
-      category: "فواكه",
-      unitPrices: { Kilo: 85, Package: 240, Offer: 500 }
+      category: "?????",
+      unitPrices: { Kilo: 85, Piece: 18, Package: 240, Offer: 500 },
+      offerDescription: "",
+      note: ""
     },
     {
-      name: "تفاح أحمر سكري",
+      name: "???? ???? ????",
       status: "Available",
-      category: "فواكه",
-      unitPrices: { Kilo: 65, Piece: 8, Package: 180 }
+      category: "?????",
+      unitPrices: { Kilo: 65, Piece: 8, Package: 180, Offer: 330 },
+      offerDescription: "",
+      note: ""
     }
   ]);
 
   const now = new Date();
-  const opDay = getOperationalDay(now);
+  const operationalDay = getOperationalDay(now);
 
-  const orders = await OrderModel.insertMany([
+  await OrderModel.insertMany([
     {
-      invoiceNumber: invoiceNumber(1),
+      invoiceNumber: "DEMO-10001",
       createdAt: new Date(Date.now() - 60 * 60 * 1000),
-      operationalDay: opDay,
+      operationalDay,
       status: "Received",
       customer: {
         name: customers[0].name,
@@ -431,31 +466,52 @@ export const runSeedIfNeeded = async (): Promise<void> => {
           productId: products[0]._id.toString(),
           productName: products[0].name,
           unit: "Kilo",
-          description: "درجة أولى",
+          description: "???? ????",
           quantity: 5,
           unitPrice: 15,
-          availability: "Available"
+          note: "",
+          availability: "Available",
+          cancelReason: ""
         }
       ],
-      discount: { type: "fixed", value: 10, reason: "خصم عميل VIP" },
+      discount: { type: "fixed", value: 10, reason: "??? ???? VIP" },
       metadata: {
-        receivingSupervisor: "محمود الاستقبال",
+        receivingSupervisor: "????? ?????????",
         preparingStaff: "",
         deliveryMethod: "Internal",
+        courierName: "",
+        courierPhone: "",
+        companyPhone: "",
         orderSource: "WhatsApp",
-        marketingCampaign: ["بدون حملة"],
-        orderTiming: "Normal",
-        orderTimingValue: "",
         isPaidByCourier: false,
         paymentMethod: "Cash",
+        marketingCampaign: ["???? ????"],
+        orderTiming: "Normal",
+        orderTimingValue: "",
         loyaltyDiscountUsed: 0
       },
-      timestamps: { received: new Date(Date.now() - 60 * 60 * 1000) }
+      evaluation: {
+        productQuality: "",
+        productQualityNote: "",
+        deliverySpeed: "",
+        deliverySpeedNote: "",
+        courierBehavior: "",
+        courierBehaviorNote: "",
+        status: "",
+        statusNote: ""
+      },
+      timestamps: {
+        received: new Date(Date.now() - 60 * 60 * 1000),
+        preparationStarted: null,
+        prepared: null,
+        courierPickedUp: null,
+        delivered: null
+      }
     },
     {
-      invoiceNumber: invoiceNumber(2),
+      invoiceNumber: "DEMO-10002",
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      operationalDay: opDay,
+      operationalDay,
       status: "In Preparation",
       customer: {
         name: customers[1].name,
@@ -475,45 +531,63 @@ export const runSeedIfNeeded = async (): Promise<void> => {
           productId: products[2]._id.toString(),
           productName: products[2].name,
           unit: "Package",
-          description: "كرتونة كبيرة",
+          description: "?????? ?????",
           quantity: 2,
           unitPrice: 240,
-          availability: "Available"
+          note: "",
+          availability: "Available",
+          cancelReason: ""
         },
         {
           productId: products[3]._id.toString(),
           productName: products[3].name,
           unit: "Kilo",
-          description: "سكري",
+          description: "????",
           quantity: 3,
           unitPrice: 65,
-          availability: "Available"
+          note: "",
+          availability: "Available",
+          cancelReason: ""
         }
       ],
-      discount: { type: "percentage", value: 5, reason: "خصم افتراضي" },
+      discount: { type: "percentage", value: 5, reason: "??? ???????" },
       metadata: {
-        receivingSupervisor: "محمود الاستقبال",
-        preparingStaff: "أحمد التحضير",
+        receivingSupervisor: "????? ?????????",
+        preparingStaff: "????? ???????",
         deliveryMethod: "Shipping Company",
-        courierName: "أرامكس",
+        courierName: "??????",
         courierPhone: "16999",
+        companyPhone: "16999",
         orderSource: "Facebook",
-        marketingCampaign: ["حملة المؤثرين"],
-        orderTiming: "Urgent",
-        orderTimingValue: "",
         isPaidByCourier: false,
         paymentMethod: "Cash",
+        marketingCampaign: ["???? ????????"],
+        orderTiming: "Urgent",
+        orderTimingValue: "",
         loyaltyDiscountUsed: 0
+      },
+      evaluation: {
+        productQuality: "",
+        productQualityNote: "",
+        deliverySpeed: "",
+        deliverySpeedNote: "",
+        courierBehavior: "",
+        courierBehaviorNote: "",
+        status: "",
+        statusNote: ""
       },
       timestamps: {
         received: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        preparationStarted: new Date(Date.now() - 90 * 60 * 1000)
+        preparationStarted: new Date(Date.now() - 90 * 60 * 1000),
+        prepared: null,
+        courierPickedUp: null,
+        delivered: null
       }
     },
     {
-      invoiceNumber: invoiceNumber(3),
+      invoiceNumber: "DEMO-10003",
       createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      operationalDay: opDay,
+      operationalDay,
       status: "Waiting for Courier",
       customer: {
         name: customers[2].name,
@@ -533,73 +607,73 @@ export const runSeedIfNeeded = async (): Promise<void> => {
           productId: products[1]._id.toString(),
           productName: products[1].name,
           unit: "Kilo",
-          description: "طازج",
+          description: "????",
           quantity: 10,
           unitPrice: 12,
-          availability: "Available"
+          note: "",
+          availability: "Available",
+          cancelReason: ""
         }
       ],
       discount: { type: "fixed", value: 0, reason: "" },
       metadata: {
-        receivingSupervisor: "محمود الاستقبال",
-        preparingStaff: "أحمد التحضير",
+        receivingSupervisor: "????? ?????????",
+        preparingStaff: "????? ???????",
         deliveryMethod: "Internal",
-        courierName: "كريم الطيار",
+        courierName: "??????",
         courierPhone: "01099998888",
+        companyPhone: "",
         orderSource: "Instagram",
-        marketingCampaign: ["بدون حملة"],
-        orderTiming: "Normal",
-        orderTimingValue: "",
         isPaidByCourier: false,
         paymentMethod: "Cash",
+        marketingCampaign: ["???? ????"],
+        orderTiming: "Normal",
+        orderTimingValue: "",
         loyaltyDiscountUsed: 0
+      },
+      evaluation: {
+        productQuality: "",
+        productQualityNote: "",
+        deliverySpeed: "",
+        deliverySpeedNote: "",
+        courierBehavior: "",
+        courierBehaviorNote: "",
+        status: "",
+        statusNote: ""
       },
       timestamps: {
         received: new Date(Date.now() - 3 * 60 * 60 * 1000),
         preparationStarted: new Date(Date.now() - 2.5 * 60 * 60 * 1000),
-        prepared: new Date(Date.now() - 2 * 60 * 60 * 1000)
+        prepared: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        courierPickedUp: null,
+        delivered: null
       }
     }
   ]);
 
-  const firstUser = await UserModel.findOne({ username: "admin_001" }).lean();
-  const secondUser = await UserModel.findOne({ username: "prep_001" }).lean();
+  console.log("\nSeeded demo accounts:");
+  for (const account of demoUsers) {
+    console.log(`- ${account.username} / ${account.password}`);
+  }
+};
 
-  for (const order of orders) {
-    const room = await ChatRoomModel.create({
-      type: "order",
-      orderId: order._id.toString(),
-      name: `محادثة طلب #${order.invoiceNumber}`,
-      unreadCount: 0,
-      lastMessage: "تم إنشاء الغرفة",
-      lastTimestamp: new Date()
-    });
-
-    if (firstUser && secondUser) {
-      await ChatMessageModel.insertMany([
-        {
-          roomId: room._id,
-          senderUserId: firstUser._id,
-          senderName: firstUser.name,
-          senderRoleKey: "management",
-          text: `متابعة طلب ${order.invoiceNumber}`,
-          createdAt: new Date(Date.now() - 30 * 60 * 1000)
-        },
-        {
-          roomId: room._id,
-          senderUserId: secondUser._id,
-          senderName: secondUser.name,
-          senderRoleKey: "preparation_officer",
-          text: "تم استلام الملاحظة وجارٍ التنفيذ",
-          createdAt: new Date(Date.now() - 25 * 60 * 1000)
-        }
-      ]);
-    }
+export const runSeedIfNeeded = async (): Promise<void> => {
+  const roleCount = await RoleModel.countDocuments();
+  if (roleCount > 0) {
+    return;
   }
 
-  console.log("\nSeed generated accounts (printed once on empty DB):");
-  generatedCreds.forEach((cred) => {
-    console.log(`[${cred.role}] ${cred.username} / ********`);
-  });
-  console.log("");
+  await ensureModelCollectionsAndIndexes();
+  await seedDemoData();
+};
+
+export const resetDatabaseForDemo = async (): Promise<void> => {
+  const db = mongoose.connection.db;
+  if (!db) {
+    throw new Error("Database connection is not ready");
+  }
+
+  await db.dropDatabase();
+  await ensureModelCollectionsAndIndexes();
+  await seedDemoData();
 };

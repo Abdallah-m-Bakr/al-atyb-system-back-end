@@ -5,6 +5,10 @@ import {
   listCustomers,
   updateCustomer
 } from "../services/customers.service";
+import {
+  parseCustomerCreatePayload,
+  parseCustomerUpdatePayload
+} from "../validation/requestValidation";
 
 export const listCustomersController = async (req: Request, res: Response) => {
   const items = await listCustomers(req.query as any);
@@ -12,18 +16,28 @@ export const listCustomersController = async (req: Request, res: Response) => {
 };
 
 export const createCustomerController = async (req: Request, res: Response) => {
-  const item = await createCustomer(req.body || {});
-  return res.status(201).json({ item });
+  try {
+    const payload = parseCustomerCreatePayload(req.body || {});
+    const item = await createCustomer(payload);
+    return res.status(201).json({ item });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
 };
 
 export const updateCustomerController = async (req: Request, res: Response) => {
-  const item = await updateCustomer(req.params.id, req.body || {});
+  try {
+    const payload = parseCustomerUpdatePayload(req.body || {});
+    const item = await updateCustomer(req.params.id, payload);
 
-  if (!item) {
-    return res.status(404).json({ message: "Customer not found" });
+    if (!item) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    return res.json({ item });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
   }
-
-  return res.json({ item });
 };
 
 export const deleteCustomerController = async (req: Request, res: Response) => {

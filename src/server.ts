@@ -1,14 +1,19 @@
 import http from "http";
 import { app } from "./app";
 import { connectDb } from "./config/db";
-import { runSeedIfNeeded } from "./services/seed.service";
+import { resetDatabaseForDemo, runSeedIfNeeded } from "./services/seed.service";
 // Chat feature temporarily disabled for v1 release
 // Temporarily disabled for v1 production
 // import { createSocketServer } from "./socket";
 
 const bootstrap = async () => {
   await connectDb();
-  await runSeedIfNeeded();
+
+  if (process.env.NODE_ENV === "production") {
+    await resetDatabaseForDemo();
+  } else {
+    await runSeedIfNeeded();
+  }
 
   const server = http.createServer(app);
   // Chat feature temporarily disabled for v1 release

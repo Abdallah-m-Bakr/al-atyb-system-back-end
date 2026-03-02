@@ -1,5 +1,6 @@
-﻿import { Request, Response } from "express";
+import { Request, Response } from "express";
 import { getDefinitions, updateDefinitions } from "../services/settings.service";
+import { parseSettingsDefinitionsPayload } from "../validation/requestValidation";
 
 export const getDefinitionsController = async (_req: Request, res: Response) => {
   const items = await getDefinitions();
@@ -7,7 +8,12 @@ export const getDefinitionsController = async (_req: Request, res: Response) => 
 };
 
 export const updateDefinitionsController = async (req: Request, res: Response) => {
-  const categories = Array.isArray(req.body?.categories) ? req.body.categories : req.body || [];
-  const items = await updateDefinitions(categories);
-  return res.json({ items });
+  try {
+    const rawCategories = Array.isArray(req.body?.categories) ? req.body.categories : req.body || [];
+    const categories = parseSettingsDefinitionsPayload(rawCategories);
+    const items = await updateDefinitions(categories);
+    return res.json({ items });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
 };
