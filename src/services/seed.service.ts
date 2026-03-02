@@ -12,39 +12,39 @@ import { ChatMessageModel } from "../models/ChatMessage";
 import { hashPassword } from "../utils/hash";
 
 const permissionLabels: Record<string, string> = {
-  view_receiving: "??? ?????????",
-  view_preparation: "??? ???????",
-  view_shipping: "??? ?????",
-  view_history: "??? ?????",
-  view_analytics: "??? ?????????",
-  view_chat: "??? ?????",
-  view_customers: "??? ???????",
-  view_products: "??? ???????",
-  view_staff: "??? ????????",
-  view_settings: "??? ?????????",
-  orders_create: "????? ???",
-  orders_edit: "????? ???",
-  orders_delete: "??? ???",
-  orders_change_status: "????? ???? ?????",
-  orders_assign_shipping: "????? ?????",
-  customers_create: "????? ????",
-  customers_edit: "????? ????",
-  customers_delete: "??? ????",
-  products_create: "????? ???",
-  products_edit: "????? ???",
-  products_delete: "??? ???",
-  staff_create: "????? ??????",
-  staff_edit: "????? ??????",
-  staff_delete: "??? ??????",
-  roles_edit_permissions: "????? ??????? ???????",
-  settings_edit_definitions: "????? ??????? ??????",
-  chat_send_message: "????? ?????"
+  view_receiving: "عرض الاستقبال",
+  view_preparation: "عرض التحضير",
+  view_shipping: "عرض الشحن",
+  view_history: "عرض السجل",
+  view_analytics: "عرض التحليلات",
+  view_chat: "عرض الشات",
+  view_customers: "عرض العملاء",
+  view_products: "عرض الأصناف",
+  view_staff: "عرض الموظفين",
+  view_settings: "عرض الإعدادات",
+  orders_create: "إنشاء طلب",
+  orders_edit: "تعديل طلب",
+  orders_delete: "حذف طلب",
+  orders_change_status: "تغيير حالة الطلب",
+  orders_assign_shipping: "تعيين الشحن",
+  customers_create: "إنشاء عميل",
+  customers_edit: "تعديل عميل",
+  customers_delete: "حذف عميل",
+  products_create: "إنشاء صنف",
+  products_edit: "تعديل صنف",
+  products_delete: "حذف صنف",
+  staff_create: "إنشاء مستخدم",
+  staff_edit: "تعديل مستخدم",
+  staff_delete: "حذف مستخدم",
+  roles_edit_permissions: "تعديل صلاحيات الأدوار",
+  settings_edit_definitions: "تعديل تعريفات النظام",
+  chat_send_message: "إرسال رسالة"
 };
 
 const roleDefinitions: Array<{ key: string; nameArabic: string; permissions: string[] }> = [
   {
     key: "receiving_officer",
-    nameArabic: "????? ???????",
+    nameArabic: "مسؤول استقبال",
     permissions: [
       "view_receiving",
       "view_history",
@@ -61,7 +61,7 @@ const roleDefinitions: Array<{ key: string; nameArabic: string; permissions: str
   },
   {
     key: "preparation_officer",
-    nameArabic: "????? ?????",
+    nameArabic: "مسؤول تحضير",
     permissions: [
       "view_preparation",
       "view_history",
@@ -75,7 +75,7 @@ const roleDefinitions: Array<{ key: string; nameArabic: string; permissions: str
   },
   {
     key: "pilot",
-    nameArabic: "????",
+    nameArabic: "طيار",
     permissions: [
       "view_shipping",
       "view_history",
@@ -87,7 +87,7 @@ const roleDefinitions: Array<{ key: string; nameArabic: string; permissions: str
   },
   {
     key: "management",
-    nameArabic: "?????",
+    nameArabic: "إدارة",
     permissions: [
       "view_receiving",
       "view_preparation",
@@ -119,7 +119,7 @@ const roleDefinitions: Array<{ key: string; nameArabic: string; permissions: str
   },
   {
     key: "general_manager",
-    nameArabic: "???? ???",
+    nameArabic: "مدير عام",
     permissions: [...PERMISSIONS]
   }
 ];
@@ -127,122 +127,123 @@ const roleDefinitions: Array<{ key: string; nameArabic: string; permissions: str
 const settingsDefinitions = [
   {
     id: "cust_tags",
-    label: "??????? ???????",
-    description: "???? ???????",
+    label: "تصنيفات العملاء",
+    description: "وسوم العملاء",
     items: [
-      { name: "???? VIP", active: true, sortOrder: 1 },
-      { name: "???? ?????", active: true, sortOrder: 2 },
-      { name: "??? ???????", active: true, sortOrder: 3 },
-      { name: "????? ????", active: true, sortOrder: 4 },
-      { name: "???? ????", active: true, sortOrder: 5 }
+      { name: "عميل VIP", active: true, sortOrder: 1 },
+      { name: "عميل منتظم", active: true, sortOrder: 2 },
+      { name: "صعب الإرضاء", active: true, sortOrder: 3 },
+      { name: "طلبات قيمة", active: true, sortOrder: 4 },
+      { name: "عميل جديد", active: true, sortOrder: 5 }
     ]
   },
   {
     id: "units",
-    label: "????? ??????",
-    description: "????? ?????",
+    label: "وحدات القياس",
+    description: "وحدات البيع",
     items: [
-      { name: "????", active: true, sortOrder: 1 },
-      { name: "????", active: true, sortOrder: 2 },
-      { name: "????", active: true, sortOrder: 3 },
-      { name: "??????", active: true, sortOrder: 4 },
-      { name: "???", active: true, sortOrder: 5 }
+      { name: "كيلو", active: true, sortOrder: 1 },
+      { name: "قطعة", active: true, sortOrder: 2 },
+      { name: "عبوة", active: true, sortOrder: 3 },
+      { name: "كرتونة", active: true, sortOrder: 4 },
+      { name: "عرض", active: true, sortOrder: 5 }
     ]
   },
   {
     id: "sources",
-    label: "???? ?????",
-    description: "????? ??????",
+    label: "مصدر الطلب",
+    description: "قنوات المصدر",
     items: [
-      { name: "??????", active: true, sortOrder: 1 },
-      { name: "??????", active: true, sortOrder: 2 },
-      { name: "????????", active: true, sortOrder: 3 },
-      { name: "??? ???", active: true, sortOrder: 4 },
-      { name: "?????? ????", active: true, sortOrder: 5 },
-      { name: "??????", active: true, sortOrder: 6 }
+      { name: "واتساب", active: true, sortOrder: 1 },
+      { name: "فيسبوك", active: true, sortOrder: 2 },
+      { name: "انستجرام", active: true, sortOrder: 3 },
+      { name: "تيك توك", active: true, sortOrder: 4 },
+      { name: "تليفون أرضي", active: true, sortOrder: 5 },
+      { name: "موبايل", active: true, sortOrder: 6 }
     ]
   },
   {
     id: "campaigns",
-    label: "???? ???????",
-    description: "??????? ??????",
+    label: "حملة تسويقية",
+    description: "الحملات النشطة",
     items: [
-      { name: "???? ????", active: true, sortOrder: 1 },
-      { name: "??? ?????? ???????", active: true, sortOrder: 2 },
-      { name: "???? ????????", active: true, sortOrder: 3 },
-      { name: "??????? ?????", active: true, sortOrder: 4 }
+      { name: "بدون حملة", active: true, sortOrder: 1 },
+      { name: "عرض الجمعة البيضاء", active: true, sortOrder: 2 },
+      { name: "حملة المؤثرين", active: true, sortOrder: 3 },
+      { name: "إعلانات ممولة", active: true, sortOrder: 4 }
     ]
   },
   {
     id: "order_status_msg",
-    label: "???? ????? (?????)",
-    description: "??? ????? ?????",
+    label: "حالة الطلب (توقيت)",
+    description: "وصف توقيت الطلب",
     items: [
-      { name: "????", active: true, sortOrder: 1 },
-      { name: "?????? ????", active: true, sortOrder: 2 },
-      { name: "????? ????", active: true, sortOrder: 3 }
+      { name: "عادي", active: true, sortOrder: 1 },
+      { name: "مستعجل جداً", active: true, sortOrder: 2 },
+      { name: "توقيت محدد", active: true, sortOrder: 3 }
     ]
   },
   {
     id: "item_status",
-    label: "???? ?????",
-    description: "????? ???????",
+    label: "موقف الصنف",
+    description: "حالات الأصناف",
     items: [
-      { name: "?????", active: true, sortOrder: 1 },
-      { name: "??? ?????", active: true, sortOrder: 2 },
-      { name: "???? ???", active: true, sortOrder: 3 },
-      { name: "???? ??????", active: true, sortOrder: 4 },
-      { name: "???? ?? ??????", active: true, sortOrder: 5 }
+      { name: "متوفر", active: true, sortOrder: 1 },
+      { name: "غير متوفر", active: true, sortOrder: 2 },
+      { name: "كمية أقل", active: true, sortOrder: 3 },
+      { name: "جودة متوسطة", active: true, sortOrder: 4 },
+      { name: "ملغي من العميل", active: true, sortOrder: 5 }
     ]
   },
   {
     id: "payment_methods",
-    label: "????? ???????",
-    description: "??? ?????",
+    label: "طريقة التحصيل",
+    description: "طرق الدفع",
     items: [
-      { name: "???? (Cash)", active: true, sortOrder: 1 },
-      { name: "??????? ???", active: true, sortOrder: 2 },
-      { name: "????????", active: true, sortOrder: 3 }
+      { name: "نقدي (Cash)", active: true, sortOrder: 1 },
+      { name: "فودافون كاش", active: true, sortOrder: 2 },
+      { name: "إنستاباي", active: true, sortOrder: 3 }
     ]
   },
   {
     id: "order_workflow",
-    label: "???? ?????",
-    description: "????? ?????",
+    label: "موقف الطلب",
+    description: "مراحل الطلب",
     items: [
-      { name: "?? ?????????", active: true, sortOrder: 1 },
-      { name: "??? ????????", active: true, sortOrder: 2 },
-      { name: "?? ???????", active: true, sortOrder: 3 },
-      { name: "???? ???????", active: true, sortOrder: 4 },
-      { name: "?? ???????", active: true, sortOrder: 5 },
-      { name: "?????? ????", active: true, sortOrder: 6 },
-      { name: "?? ??????? ???????", active: true, sortOrder: 7 },
-      { name: "?? ???????", active: true, sortOrder: 8 },
-      { name: "?? ???????", active: true, sortOrder: 9 }
+      { name: "تم الاستقبال", active: true, sortOrder: 1 },
+      { name: "تحت المراجعة", active: true, sortOrder: 2 },
+      { name: "تمت المراجعة", active: true, sortOrder: 3 },
+      { name: "تم التأكيد", active: true, sortOrder: 4 },
+      { name: "جاري التجهيز", active: true, sortOrder: 5 },
+      { name: "تم التجهيز", active: true, sortOrder: 6 },
+      { name: "في انتظار طيار", active: true, sortOrder: 7 },
+      { name: "تم التسليم للمندوب", active: true, sortOrder: 8 },
+      { name: "تم التوصيل", active: true, sortOrder: 9 },
+      { name: "تم الإلغاء", active: true, sortOrder: 10 }
     ]
   },
   {
     id: "invoice_status",
-    label: "???? ????????",
-    description: "?????? ????????",
+    label: "حالة الفاتورة",
+    description: "الحالة النهائية",
     items: [
-      { name: "?????", active: true, sortOrder: 1 },
-      { name: "????? ???????", active: true, sortOrder: 2 },
-      { name: "???????", active: true, sortOrder: 3 },
-      { name: "???? (????? ????)", active: true, sortOrder: 4 },
-      { name: "????", active: true, sortOrder: 5 }
+      { name: "مكتمل", active: true, sortOrder: 1 },
+      { name: "مرتجع بالكامل", active: true, sortOrder: 2 },
+      { name: "استبدال", active: true, sortOrder: 3 },
+      { name: "ناقص (مرتجع جزئي)", active: true, sortOrder: 4 },
+      { name: "شكوى", active: true, sortOrder: 5 }
     ]
   },
   {
     id: "product_categories",
-    label: "????????? (???????)",
-    description: "??????? ????????",
+    label: "التصنيفات (الأصناف)",
+    description: "تصنيفات المنتجات",
     items: [
-      { name: "??????", active: true, sortOrder: 1 },
-      { name: "?????", active: true, sortOrder: 2 },
-      { name: "?????", active: true, sortOrder: 3 },
-      { name: "??????", active: true, sortOrder: 4 },
-      { name: "??? ??????", active: true, sortOrder: 5 }
+      { name: "خضروات", active: true, sortOrder: 1 },
+      { name: "فواكه", active: true, sortOrder: 2 },
+      { name: "ألبان", active: true, sortOrder: 3 },
+      { name: "مجمدات", active: true, sortOrder: 4 },
+      { name: "سلع غذائية", active: true, sortOrder: 5 }
     ]
   }
 ];
@@ -252,31 +253,31 @@ const demoUsers: Array<{ roleKey: string; username: string; password: string; na
     roleKey: "receiving_officer",
     username: "receiving_officer",
     password: "receiving_officer123456",
-    name: "????? ?????????"
+    name: "محمود الاستقبال"
   },
   {
     roleKey: "preparation_officer",
     username: "preparation_officer",
     password: "preparation_officer123456",
-    name: "????? ???????"
+    name: "أحمد التحضير"
   },
   {
     roleKey: "pilot",
     username: "pilot",
     password: "pilot123456",
-    name: "??????"
+    name: "كريم الطيار"
   },
   {
     roleKey: "management",
     username: "management",
     password: "management123456",
-    name: "???????"
+    name: "مدير الإدارة"
   },
   {
     roleKey: "general_manager",
     username: "general_manager",
     password: "general_manager123456",
-    name: "?????? ?????"
+    name: "المدير العام"
   },
   {
     roleKey: "management",
@@ -361,42 +362,42 @@ const seedDemoData = async (): Promise<void> => {
 
   const customers = await CustomerModel.insertMany([
     {
-      name: "???? ????",
+      name: "طاهر علوه",
       accountName: "taher_alwa_fb",
       phones: ["01010303303", ""],
-      addresses: ["???????? - ???? ?????????", ""],
-      tags: ["???? VIP", "???? ?????"],
+      addresses: ["المنصورة - شارع الجمهورية", ""],
+      tags: ["عميل VIP", "عميل منتظم"],
       previousOrdersCount: 45,
       monthlyAverage: 8.5,
-      notes: "???? ????",
+      notes: "عميل مميز",
       deliveryFee: 35,
       defaultDiscount: 10,
       loyaltyPoints: 120,
       rating: 5
     },
     {
-      name: "???? ??? ???",
+      name: "أحمد علي حسن",
       accountName: "ahmed_ali_fb",
       phones: ["01011223344", "01299887766"],
-      addresses: ["??????? - ???????", "?????? - ????? ????"],
-      tags: ["???? ?????"],
+      addresses: ["القاهرة - المعادي", "الجيزة - الشيخ زايد"],
+      tags: ["عميل منتظم"],
       previousOrdersCount: 15,
       monthlyAverage: 3,
-      notes: "???? ??????? ??? 6 ????",
+      notes: "يفضل التوصيل بعد 6 مساء",
       deliveryFee: 45,
       defaultDiscount: 5,
       loyaltyPoints: 45,
       rating: 4
     },
     {
-      name: "??? ?????",
+      name: "منى محمود",
       accountName: "mona_inst",
       phones: ["01122334455", ""],
-      addresses: ["?????? ??????", ""],
-      tags: ["???? ????"],
+      addresses: ["التجمع الخامس", ""],
+      tags: ["عميل جديد"],
       previousOrdersCount: 5,
       monthlyAverage: 1.2,
-      notes: "????? ??? 3",
+      notes: "بوابة رقم 3",
       deliveryFee: 50,
       defaultDiscount: 0,
       loyaltyPoints: 30,
@@ -406,33 +407,33 @@ const seedDemoData = async (): Promise<void> => {
 
   const products = await ProductModel.insertMany([
     {
-      name: "????? ????",
+      name: "طماطم بلدي",
       status: "Available",
-      category: "??????",
+      category: "خضروات",
       unitPrices: { Kilo: 15, Piece: 2, Package: 40, Offer: 70 },
       offerDescription: "",
       note: ""
     },
     {
-      name: "???? ????",
+      name: "خيار صوبة",
       status: "Available",
-      category: "??????",
+      category: "خضروات",
       unitPrices: { Kilo: 12, Piece: 1.5, Package: 30, Offer: 55 },
       offerDescription: "",
       note: ""
     },
     {
-      name: "????? ????",
+      name: "مانجو عويس",
       status: "Available",
-      category: "?????",
+      category: "فواكه",
       unitPrices: { Kilo: 85, Piece: 18, Package: 240, Offer: 500 },
       offerDescription: "",
       note: ""
     },
     {
-      name: "???? ???? ????",
+      name: "تفاح أحمر سكري",
       status: "Available",
-      category: "?????",
+      category: "فواكه",
       unitPrices: { Kilo: 65, Piece: 8, Package: 180, Offer: 330 },
       offerDescription: "",
       note: ""
@@ -466,7 +467,7 @@ const seedDemoData = async (): Promise<void> => {
           productId: products[0]._id.toString(),
           productName: products[0].name,
           unit: "Kilo",
-          description: "???? ????",
+          description: "درجة أولى",
           quantity: 5,
           unitPrice: 15,
           note: "",
@@ -474,9 +475,9 @@ const seedDemoData = async (): Promise<void> => {
           cancelReason: ""
         }
       ],
-      discount: { type: "fixed", value: 10, reason: "??? ???? VIP" },
+      discount: { type: "fixed", value: 10, reason: "خصم عميل VIP" },
       metadata: {
-        receivingSupervisor: "????? ?????????",
+        receivingSupervisor: "محمود الاستقبال",
         preparingStaff: "",
         deliveryMethod: "Internal",
         courierName: "",
@@ -485,7 +486,7 @@ const seedDemoData = async (): Promise<void> => {
         orderSource: "WhatsApp",
         isPaidByCourier: false,
         paymentMethod: "Cash",
-        marketingCampaign: ["???? ????"],
+        marketingCampaign: ["بدون حملة"],
         orderTiming: "Normal",
         orderTimingValue: "",
         loyaltyDiscountUsed: 0
@@ -531,7 +532,7 @@ const seedDemoData = async (): Promise<void> => {
           productId: products[2]._id.toString(),
           productName: products[2].name,
           unit: "Package",
-          description: "?????? ?????",
+          description: "كرتونة كبيرة",
           quantity: 2,
           unitPrice: 240,
           note: "",
@@ -542,7 +543,7 @@ const seedDemoData = async (): Promise<void> => {
           productId: products[3]._id.toString(),
           productName: products[3].name,
           unit: "Kilo",
-          description: "????",
+          description: "سكري",
           quantity: 3,
           unitPrice: 65,
           note: "",
@@ -550,18 +551,18 @@ const seedDemoData = async (): Promise<void> => {
           cancelReason: ""
         }
       ],
-      discount: { type: "percentage", value: 5, reason: "??? ???????" },
+      discount: { type: "percentage", value: 5, reason: "خصم افتراضي" },
       metadata: {
-        receivingSupervisor: "????? ?????????",
-        preparingStaff: "????? ???????",
+        receivingSupervisor: "محمود الاستقبال",
+        preparingStaff: "أحمد التحضير",
         deliveryMethod: "Shipping Company",
-        courierName: "??????",
+        courierName: "أرامكس",
         courierPhone: "16999",
         companyPhone: "16999",
         orderSource: "Facebook",
         isPaidByCourier: false,
         paymentMethod: "Cash",
-        marketingCampaign: ["???? ????????"],
+        marketingCampaign: ["حملة المؤثرين"],
         orderTiming: "Urgent",
         orderTimingValue: "",
         loyaltyDiscountUsed: 0
@@ -607,7 +608,7 @@ const seedDemoData = async (): Promise<void> => {
           productId: products[1]._id.toString(),
           productName: products[1].name,
           unit: "Kilo",
-          description: "????",
+          description: "طازج",
           quantity: 10,
           unitPrice: 12,
           note: "",
@@ -617,16 +618,16 @@ const seedDemoData = async (): Promise<void> => {
       ],
       discount: { type: "fixed", value: 0, reason: "" },
       metadata: {
-        receivingSupervisor: "????? ?????????",
-        preparingStaff: "????? ???????",
+        receivingSupervisor: "محمود الاستقبال",
+        preparingStaff: "أحمد التحضير",
         deliveryMethod: "Internal",
-        courierName: "??????",
+        courierName: "كريم الطيار",
         courierPhone: "01099998888",
         companyPhone: "",
         orderSource: "Instagram",
         isPaidByCourier: false,
         paymentMethod: "Cash",
-        marketingCampaign: ["???? ????"],
+        marketingCampaign: ["بدون حملة"],
         orderTiming: "Normal",
         orderTimingValue: "",
         loyaltyDiscountUsed: 0
